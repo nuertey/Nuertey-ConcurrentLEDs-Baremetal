@@ -67,6 +67,9 @@ DigitalOut g_LEDRed(LED3);
 
 // =======================================================================
 // 10mm LED connections to NUCLEO-F767ZI output pins are documented below:
+//
+// Employing 100Ω resistors for these next three per my actual breadboard
+// wiring.
 // =======================================================================
 
 // Connector: CN10
@@ -99,6 +102,9 @@ DigitalOut g_External10mmLEDRed(PE_14);   // LED Current = 18mA; Voltage Drop = 
 
 // ====================================================================
 // 10mm LED connections to NUCLEO-F767ZI PWM pins are documented below:
+//
+// Employing 47Ω resistors for these next three per my actual breadboard
+// wiring.
 // ====================================================================
 
 // Connector: CN7 
