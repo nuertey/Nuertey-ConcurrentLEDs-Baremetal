@@ -1,0 +1,10 @@
+{
+    "requires": ["bare-metal", "events"],
+    "target_overrides": {
+        "*": {
+            "target.c_lib": "small",
+            "platform.stdio-baud-rate": 9600,
+            "platform.stdio-convert-newlines": true
+        }
+    }
+}
