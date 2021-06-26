@@ -131,10 +131,14 @@ PwmOut g_ExternalPWMLEDRed(PB_0);
 // Let's ride on the bleeding edge with chrono_literals:
 using namespace std::chrono_literals;
 
-LowPowerTicker ticker0;
+LowPowerTicker ticker0_0;
+LowPowerTicker ticker0_1;
 LowPowerTicker ticker1;
 LowPowerTicker ticker2;
 LowPowerTicker ticker3;
+
+auto g_MaxTriangular = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
+uint32_t g_TriangularCount = 0;
 
 void LEDGreenBlinker()
 {
@@ -170,23 +174,26 @@ void LEDSawToothWave()
     }
 }
 
-//void LEDTriangularWave(PwmOut * pExternalLEDPin)
-//{
+void LEDTriangularWave()
+{
+    auto dutyCycle = g_TriangleWaveform[g_TriangularCount];
 
-    //for (auto & dutyCycle : g_TriangleWaveform) 
-    //{
-        //// Set the output duty-cycle, specified as a percentage (float)
-        ////
-        //// Parameters
-        ////    value A floating-point value representing the output duty-cycle, 
-        ////    specified as a percentage. The value should lie between 0.0f 
-        ////    (representing on 0%) and 1.0f (representing on 100%). Values 
-        ////    outside this range will be saturated to 0.0f or 1.0f.
-        //float scaledDutyCycle = (dutyCycle/(*result));
-        //*pExternalLEDPin = scaledDutyCycle;
-        //ThisThread::sleep_for(200);
-    //}
-//}
+    // Set the output duty-cycle, specified as a percentage (float)
+    //
+    // Parameters
+    //    value A floating-point value representing the output duty-cycle, 
+    //    specified as a percentage. The value should lie between 0.0f 
+    //    (representing on 0%) and 1.0f (representing on 100%). Values 
+    //    outside this range will be saturated to 0.0f or 1.0f.
+    float scaledDutyCycle = (dutyCycle/(*g_MaxTriangular));
+    g_ExternalPWMLEDYellow = scaledDutyCycle;
+    
+    ++g_TriangularCount;
+    if (g_TriangularCount >= NUMBER_OF_TRIANGULAR_SAMPLES)
+    {
+        g_TriangularCount = 0;
+    }
+}
 
 void LEDSinusoidalWave(PwmOut * pExternalLEDPin)
 {
@@ -219,12 +226,12 @@ int main()
     EventQueue theMasterEventQueue;
 
     // Events are simple callbacks:
-    //theMasterEventQueue.call_every(200ms, LEDTriangularWave, &g_ExternalPWMLEDYellow);
     theMasterEventQueue.call(LEDSinusoidalWave, &g_ExternalPWMLEDRed);
     
     // The address of the function to be attached and the interval (in seconds).
     // Have these interrupt the sinusoidal wave event processing as that can sleep:
-    ticker0.attach(&LEDSawToothWave, 0.2f);
+    ticker0_0.attach(&LEDSawToothWave, 0.2f);
+    ticker0_1.attach(&LEDTriangularWave, 0.2f);
     
     ticker1.attach(&LEDGreenBlinker, 0.1f);
     ticker2.attach(&LEDYellowBlinker, 0.2f);
