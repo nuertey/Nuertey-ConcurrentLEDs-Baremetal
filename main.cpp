@@ -212,7 +212,7 @@ void LEDSinusoidalWave(PwmOut * pExternalLEDPin)
             //    outside this range will be saturated to 0.0f or 1.0f.
             float scaledDutyCycle = (dutyCycle/(*result));
             *pExternalLEDPin = scaledDutyCycle;
-            ThisThread::sleep_for(40);
+            ThisThread::sleep_for(40ms);
         }
     }
 }
@@ -230,12 +230,12 @@ int main()
     
     // The address of the function to be attached and the interval (in seconds).
     // Have these interrupt the sinusoidal wave event processing as that can sleep:
-    ticker0_0.attach(&LEDSawToothWave, 0.2f);
-    ticker0_1.attach(&LEDTriangularWave, 0.2f);
+    ticker0_0.attach(&LEDSawToothWave, 200ms);
+    ticker0_1.attach(&LEDTriangularWave, 200ms);
     
-    ticker1.attach(&LEDGreenBlinker, 0.1f);
-    ticker2.attach(&LEDYellowBlinker, 0.2f);
-    ticker3.attach(&LEDRedBlinker, 0.5f);
+    ticker1.attach(&LEDGreenBlinker, 100ms);
+    ticker2.attach(&LEDYellowBlinker, 200ms);
+    ticker3.attach(&LEDRedBlinker, 500ms);
 
     // We will never return from the call below, as events are executed by 
     // the dispatch_forever method. And this is precisely what we want as,    
