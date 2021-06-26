@@ -131,6 +131,13 @@ PwmOut g_ExternalPWMLEDRed(PB_0);
 // Let's ride on the bleeding edge with chrono_literals:
 using namespace std::chrono_literals;
 
+LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker g_PeriodicStateChanger;
+
 // =============================
 // Begin Actual Implementations:
 // =============================
@@ -159,8 +166,15 @@ struct ExternalLED_t
     uint32_t       m_TimeOff;
 };
 
-void LEDBlinker(ExternalLED_t * pExternalLED)
+void LEDBlinkerON(ExternalLED_t * pExternalLED)
 {
+    *(pExternalLED->m_pExternalLEDPin) = LED_ON;
+}
+
+void LEDBlinkerOFF(ExternalLED_t * pExternalLED)
+{
+    // Instead of the infinite loop here and elsewhere, rather trust the EventQueue to do its own concurrent dispatching with call_every
+
     while (1) 
     {
         *(pExternalLED->m_pExternalLEDPin) = LED_ON;
@@ -172,13 +186,29 @@ void LEDBlinker(ExternalLED_t * pExternalLED)
 
 void LEDSawToothWave(PwmOut * pExternalLEDPin)
 {
-    while (1)
-    {
-        // Gradually change the intensity of the LED according to the
-        // saw-tooth waveform pattern.
-        *pExternalLEDPin = *pExternalLEDPin + 0.01;
-        ThisThread::sleep_for(200);
+    // Gradually change the intensity of the LED according to the
+    // saw-tooth waveform pattern.
+    *pExternalLEDPin = *pExternalLEDPin + 0.01;
 
+    // Set the output duty-cycle, specified as a percentage (float)
+    //
+    // Parameters
+    //    value A floating-point value representing the output duty-cycle, 
+    //    specified as a percentage. The value should lie between 0.0f 
+    //    (representing on 0%) and 1.0f (representing on 100%). Values 
+    //    outside this range will be saturated to 0.0f or 1.0f.
+    if (*pExternalLEDPin == 1.0)
+    {
+        *pExternalLEDPin = 0;
+    }
+}
+
+void LEDTriangularWave(PwmOut * pExternalLEDPin)
+{
+    auto result = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
+
+    for (auto & dutyCycle : g_TriangleWaveform) 
+    {
         // Set the output duty-cycle, specified as a percentage (float)
         //
         // Parameters
@@ -186,52 +216,30 @@ void LEDSawToothWave(PwmOut * pExternalLEDPin)
         //    specified as a percentage. The value should lie between 0.0f 
         //    (representing on 0%) and 1.0f (representing on 100%). Values 
         //    outside this range will be saturated to 0.0f or 1.0f.
-        if (*pExternalLEDPin == 1.0)
-        {
-            *pExternalLEDPin = 0;
-        }
-    }
-}
-
-void LEDTriangularWave(PwmOut * pExternalLEDPin)
-{
-    auto result = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
-    while (1)
-    {
-        for (auto & dutyCycle : g_TriangleWaveform) 
-        {
-            // Set the output duty-cycle, specified as a percentage (float)
-            //
-            // Parameters
-            //    value A floating-point value representing the output duty-cycle, 
-            //    specified as a percentage. The value should lie between 0.0f 
-            //    (representing on 0%) and 1.0f (representing on 100%). Values 
-            //    outside this range will be saturated to 0.0f or 1.0f.
-            float scaledDutyCycle = (dutyCycle/(*result));
-            *pExternalLEDPin = scaledDutyCycle;
-            ThisThread::sleep_for(200);
-        }
+        float scaledDutyCycle = (dutyCycle/(*result));
+        *pExternalLEDPin = scaledDutyCycle;
+        ThisThread::sleep_for(200);
     }
 }
 
 void LEDSinusoidalWave(PwmOut * pExternalLEDPin)
 {
+    // Instead of the infinite loop here and elsewhere, rather trust the EventQueue to do its own concurrent dispatching with call_every
+
     auto result = std::max_element(g_SineWaveform, g_SineWaveform + NUMBER_OF_SINUSOID_SAMPLES);
-    while (1)
+
+    for (auto & dutyCycle : g_SineWaveform) 
     {
-        for (auto & dutyCycle : g_SineWaveform) 
-        {
-            // Set the output duty-cycle, specified as a percentage (float)
-            //
-            // Parameters
-            //    value A floating-point value representing the output duty-cycle, 
-            //    specified as a percentage. The value should lie between 0.0f 
-            //    (representing on 0%) and 1.0f (representing on 100%). Values 
-            //    outside this range will be saturated to 0.0f or 1.0f.
-            float scaledDutyCycle = (dutyCycle/(*result));
-            *pExternalLEDPin = scaledDutyCycle;
-            ThisThread::sleep_for(40);
-        }
+        // Set the output duty-cycle, specified as a percentage (float)
+        //
+        // Parameters
+        //    value A floating-point value representing the output duty-cycle, 
+        //    specified as a percentage. The value should lie between 0.0f 
+        //    (representing on 0%) and 1.0f (representing on 100%). Values 
+        //    outside this range will be saturated to 0.0f or 1.0f.
+        float scaledDutyCycle = (dutyCycle/(*result));
+        *pExternalLEDPin = scaledDutyCycle;
+        ThisThread::sleep_for(40);
     }
 }
 
@@ -250,12 +258,25 @@ int main()
     ExternalLED_t external10mmLEDRed(&g_External10mmLEDRed, 500, 200);
 
     // Events are simple callbacks:
-    theMasterEventQueue.call(LEDSawToothWave, &g_ExternalPWMLEDGreen);
-    theMasterEventQueue.call(LEDTriangularWave, &g_ExternalPWMLEDYellow));
-    theMasterEventQueue.call(LEDSinusoidalWave, &g_ExternalPWMLEDRed);
-    theMasterEventQueue.call(LEDBlinker, &external10mmLEDYellow);
-    theMasterEventQueue.call(LEDBlinker, &external10mmLEDRed);
-    theMasterEventQueue.call(LEDBlinker, &external10mmLEDGreen);
+    ticker0.attach(&LEDSawToothWave, &g_ExternalPWMLEDGreen, 0.2f);
+    //theMasterEventQueue.call_every(200ms, LEDSawToothWave, &g_ExternalPWMLEDGreen);
+    //theMasterEventQueue.call_every(200ms, LEDTriangularWave, &g_ExternalPWMLEDYellow);
+    theMasterEventQueue.call_every(40ms, LEDSinusoidalWave, &g_ExternalPWMLEDRed);
+    
+    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDYellow);
+    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDRed);
+    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDGreen);
+    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDYellow);
+    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDRed);
+    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDGreen);
+
+    // The address of the function to be attached and the interval (in seconds):
+    ticker1.attach(&LEDBlinkerON, &external10mmLEDGreen, 0.1f);
+    ticker2.attach(&LEDBlinkerON, &external10mmLEDYellow, 0.2f);
+    ticker3.attach(&LEDBlinkerON, &external10mmLEDRed, 0.5f);
+    ticker4.attach(&LEDBlinkerOFF, &external10mmLEDGreen, 0.14f);
+    ticker5.attach(&LEDBlinkerOFF, &external10mmLEDYellow, 0.24f);
+    ticker6.attach(&LEDBlinkerOFF, &external10mmLEDRed, 0.54f);
 
     // We will never return from the call below, as events are executed by 
     // the dispatch_forever method. And this is precisely what we want as,    
