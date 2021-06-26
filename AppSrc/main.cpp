@@ -131,64 +131,31 @@ PwmOut g_ExternalPWMLEDRed(PB_0);
 // Let's ride on the bleeding edge with chrono_literals:
 using namespace std::chrono_literals;
 
-LowPowerTicker g_PeriodicStateChanger;
-LowPowerTicker g_PeriodicStateChanger;
-LowPowerTicker g_PeriodicStateChanger;
-LowPowerTicker g_PeriodicStateChanger;
-LowPowerTicker g_PeriodicStateChanger;
-LowPowerTicker g_PeriodicStateChanger;
+LowPowerTicker ticker0;
+LowPowerTicker ticker1;
+LowPowerTicker ticker2;
+LowPowerTicker ticker3;
 
-// =============================
-// Begin Actual Implementations:
-// =============================
-struct ExternalLED_t 
+void LEDGreenBlinker()
 {
-    ExternalLED_t(DigitalOut * pExternalLEDPin, const uint32_t& timeOn, const uint32_t& timeOff)
-        : m_pExternalLEDPin(pExternalLEDPin) // CAUTION! Ensure that the scope of pExternalLEDPin outlasts us.
-        , m_TimeOn(timeOn)
-        , m_TimeOff(timeOff)
-    {
-    }
-    ExternalLED_t(const ExternalLED_t& otherLED)
-    {
-        // CAUTION! Ensure that the scope of the external LED pin pointer
-        // outlasts the thread which uses this type; and it DOES, since it
-        // is really declared as global. Eschew std::move() then and simply
-        // re-point our pointer to that global variable address.
-        //m_pExternalLEDPin = std::move(otherLED.m_pExternalLEDPin);
-        m_pExternalLEDPin = otherLED.m_pExternalLEDPin;
-        m_TimeOn = otherLED.m_TimeOn;
-        m_TimeOff = otherLED.m_TimeOff;
-    }
-
-    DigitalOut *   m_pExternalLEDPin;
-    uint32_t       m_TimeOn;
-    uint32_t       m_TimeOff;
-};
-
-void LEDBlinkerON(ExternalLED_t * pExternalLED)
-{
-    *(pExternalLED->m_pExternalLEDPin) = LED_ON;
+    g_External10mmLEDGreen = !g_External10mmLEDGreen;
 }
 
-void LEDBlinkerOFF(ExternalLED_t * pExternalLED)
+void LEDYellowBlinker()
 {
-    // Instead of the infinite loop here and elsewhere, rather trust the EventQueue to do its own concurrent dispatching with call_every
-
-    while (1) 
-    {
-        *(pExternalLED->m_pExternalLEDPin) = LED_ON;
-        ThisThread::sleep_for(pExternalLED->m_TimeOn);
-        *(pExternalLED->m_pExternalLEDPin) = LED_OFF;
-        ThisThread::sleep_for(pExternalLED->m_TimeOff);
-    }
+    g_External10mmLEDYellow = !g_External10mmLEDYellow;
 }
 
-void LEDSawToothWave(PwmOut * pExternalLEDPin)
+void LEDRedBlinker()
+{
+    g_External10mmLEDRed = !g_External10mmLEDRed;
+}
+
+void LEDSawToothWave()
 {
     // Gradually change the intensity of the LED according to the
     // saw-tooth waveform pattern.
-    *pExternalLEDPin = *pExternalLEDPin + 0.01;
+    g_ExternalPWMLEDGreen = g_ExternalPWMLEDGreen + 0.01;
 
     // Set the output duty-cycle, specified as a percentage (float)
     //
@@ -197,49 +164,49 @@ void LEDSawToothWave(PwmOut * pExternalLEDPin)
     //    specified as a percentage. The value should lie between 0.0f 
     //    (representing on 0%) and 1.0f (representing on 100%). Values 
     //    outside this range will be saturated to 0.0f or 1.0f.
-    if (*pExternalLEDPin == 1.0)
+    if (g_ExternalPWMLEDGreen == 1.0)
     {
-        *pExternalLEDPin = 0;
+        g_ExternalPWMLEDGreen = 0;
     }
 }
 
-void LEDTriangularWave(PwmOut * pExternalLEDPin)
-{
-    auto result = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
+//void LEDTriangularWave(PwmOut * pExternalLEDPin)
+//{
 
-    for (auto & dutyCycle : g_TriangleWaveform) 
-    {
-        // Set the output duty-cycle, specified as a percentage (float)
-        //
-        // Parameters
-        //    value A floating-point value representing the output duty-cycle, 
-        //    specified as a percentage. The value should lie between 0.0f 
-        //    (representing on 0%) and 1.0f (representing on 100%). Values 
-        //    outside this range will be saturated to 0.0f or 1.0f.
-        float scaledDutyCycle = (dutyCycle/(*result));
-        *pExternalLEDPin = scaledDutyCycle;
-        ThisThread::sleep_for(200);
-    }
-}
+    //for (auto & dutyCycle : g_TriangleWaveform) 
+    //{
+        //// Set the output duty-cycle, specified as a percentage (float)
+        ////
+        //// Parameters
+        ////    value A floating-point value representing the output duty-cycle, 
+        ////    specified as a percentage. The value should lie between 0.0f 
+        ////    (representing on 0%) and 1.0f (representing on 100%). Values 
+        ////    outside this range will be saturated to 0.0f or 1.0f.
+        //float scaledDutyCycle = (dutyCycle/(*result));
+        //*pExternalLEDPin = scaledDutyCycle;
+        //ThisThread::sleep_for(200);
+    //}
+//}
 
 void LEDSinusoidalWave(PwmOut * pExternalLEDPin)
 {
-    // Instead of the infinite loop here and elsewhere, rather trust the EventQueue to do its own concurrent dispatching with call_every
-
     auto result = std::max_element(g_SineWaveform, g_SineWaveform + NUMBER_OF_SINUSOID_SAMPLES);
 
-    for (auto & dutyCycle : g_SineWaveform) 
+    while (1)
     {
-        // Set the output duty-cycle, specified as a percentage (float)
-        //
-        // Parameters
-        //    value A floating-point value representing the output duty-cycle, 
-        //    specified as a percentage. The value should lie between 0.0f 
-        //    (representing on 0%) and 1.0f (representing on 100%). Values 
-        //    outside this range will be saturated to 0.0f or 1.0f.
-        float scaledDutyCycle = (dutyCycle/(*result));
-        *pExternalLEDPin = scaledDutyCycle;
-        ThisThread::sleep_for(40);
+        for (auto & dutyCycle : g_SineWaveform) 
+        {
+            // Set the output duty-cycle, specified as a percentage (float)
+            //
+            // Parameters
+            //    value A floating-point value representing the output duty-cycle, 
+            //    specified as a percentage. The value should lie between 0.0f 
+            //    (representing on 0%) and 1.0f (representing on 100%). Values 
+            //    outside this range will be saturated to 0.0f or 1.0f.
+            float scaledDutyCycle = (dutyCycle/(*result));
+            *pExternalLEDPin = scaledDutyCycle;
+            ThisThread::sleep_for(40);
+        }
     }
 }
 
@@ -251,32 +218,17 @@ int main()
     // Reduce this amount if the target device has severely limited RAM.
     EventQueue theMasterEventQueue;
 
-    // It seems that Mbed Callback class can only take in one argument.
-    // Not to worry, we will improvise with an aggregate class type.
-    ExternalLED_t external10mmLEDGreen(&g_External10mmLEDGreen, 100, 100);
-    ExternalLED_t external10mmLEDYellow(&g_External10mmLEDYellow, 200, 100);
-    ExternalLED_t external10mmLEDRed(&g_External10mmLEDRed, 500, 200);
-
     // Events are simple callbacks:
-    ticker0.attach(&LEDSawToothWave, &g_ExternalPWMLEDGreen, 0.2f);
-    //theMasterEventQueue.call_every(200ms, LEDSawToothWave, &g_ExternalPWMLEDGreen);
     //theMasterEventQueue.call_every(200ms, LEDTriangularWave, &g_ExternalPWMLEDYellow);
-    theMasterEventQueue.call_every(40ms, LEDSinusoidalWave, &g_ExternalPWMLEDRed);
+    theMasterEventQueue.call(LEDSinusoidalWave, &g_ExternalPWMLEDRed);
     
-    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDYellow);
-    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDRed);
-    //theMasterEventQueue.call_every(100ms, LEDBlinkerON, &external10mmLEDGreen);
-    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDYellow);
-    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDRed);
-    //theMasterEventQueue.call_every(140ms, LEDBlinkerOFF, &external10mmLEDGreen);
-
-    // The address of the function to be attached and the interval (in seconds):
-    ticker1.attach(&LEDBlinkerON, &external10mmLEDGreen, 0.1f);
-    ticker2.attach(&LEDBlinkerON, &external10mmLEDYellow, 0.2f);
-    ticker3.attach(&LEDBlinkerON, &external10mmLEDRed, 0.5f);
-    ticker4.attach(&LEDBlinkerOFF, &external10mmLEDGreen, 0.14f);
-    ticker5.attach(&LEDBlinkerOFF, &external10mmLEDYellow, 0.24f);
-    ticker6.attach(&LEDBlinkerOFF, &external10mmLEDRed, 0.54f);
+    // The address of the function to be attached and the interval (in seconds).
+    // Have these interrupt the sinusoidal wave event processing as that can sleep:
+    ticker0.attach(&LEDSawToothWave, 0.2f);
+    
+    ticker1.attach(&LEDGreenBlinker, 0.1f);
+    ticker2.attach(&LEDYellowBlinker, 0.2f);
+    ticker3.attach(&LEDRedBlinker, 0.5f);
 
     // We will never return from the call below, as events are executed by 
     // the dispatch_forever method. And this is precisely what we want as,    
