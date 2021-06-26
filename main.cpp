@@ -189,6 +189,16 @@ void LEDSawToothWave()
 
 void LEDTriangularWave()
 {
+    // Warnings and notes
+    //
+    // No blocking code in ISR: avoid any calls to wait, infinite while 
+    // loops or blocking calls in general.
+    //
+    // No printf, malloc or new in ISR: avoid any calls to bulky library
+    // functions. In particular, certain library functions (such as printf,
+    // malloc and new) are not re-entrant, and their behavior could be 
+    // corrupted when called from an ISR.
+
     auto dutyCycle = g_TriangleWaveform[g_TriangularCount];
 
     // Set the output duty-cycle, specified as a percentage (float)
@@ -225,6 +235,19 @@ void LEDSinusoidalWave(PwmOut * pExternalLEDPin)
             //    outside this range will be saturated to 0.0f or 1.0f.
             float scaledDutyCycle = (dutyCycle/(*result));
             *pExternalLEDPin = scaledDutyCycle;
+            
+            // Power Management (sleep)
+            //
+            // Sleep mode
+            //
+            // The system clock to the core stops until a reset or an interrupt 
+            // occurs. This eliminates dynamic power that the processor, 
+            // memory systems and buses use. This mode maintains the processor,
+            // peripheral and memory state, and the peripherals continue to work
+            // and can generate interrupts.
+            //
+            // You can wake up the processor by any internal peripheral interrupt
+            // or external pin interrupt.
             ThisThread::sleep_for(40ms);
         }
     }
