@@ -131,13 +131,26 @@ PwmOut g_ExternalPWMLEDRed(PB_0);
 // Let's ride on the bleeding edge with chrono_literals:
 using namespace std::chrono_literals;
 
+// The LowPowerTicker class has the same methods as the Ticker class but
+// operates in deep sleep mode and has less resolution. Use the LowPowerTicker
+// interface to set up a recurring interrupt when you only need millisecond 
+// accuracy; it calls a function repeatedly and at a specified rate. Because
+// the LowPowerTicker class can operate in deep sleep mode, it does not 
+// block deep sleep when active.
+//
+// You can create any number of LowPowerTicker objects, allowing multiple
+// outstanding interrupts at the same time. The function can be a static
+// function, a member function of a particular object or a Callback object.
 LowPowerTicker ticker0_0;
 LowPowerTicker ticker0_1;
+
 LowPowerTicker ticker1;
 LowPowerTicker ticker2;
 LowPowerTicker ticker3;
 
-auto g_MaxTriangular = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
+// Leverage the LowPowerTicker mode to convert the previously self-contained
+// triangular wave loop into a global loop that will advance per sample.
+auto     g_MaxTriangular = std::max_element(g_TriangleWaveform, g_TriangleWaveform + NUMBER_OF_TRIANGULAR_SAMPLES);
 uint32_t g_TriangularCount = 0;
 
 void LEDGreenBlinker()
