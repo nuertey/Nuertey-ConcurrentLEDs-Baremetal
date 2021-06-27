@@ -16,8 +16,10 @@ PWM output pins to vary the intensity of yet another 3 10mm LEDs according to:
 Essentially, the values of said waveforms are scaled and used as the duty
 cycle in driving, dimming, and brightening of the latter 3 10mm LEDs.
 
-## Video Of STM32F767 MCU, the Running Code and LEDs in Action
-![alt text](https://github.com/nuertey/RandomArtifacts/blob/master/climate_project_5.jpeg?raw=true)
+## Video/Pictures Of STM32F767 MCU, the Running Code and LEDs in Action
+![alt text](https://github.com/nuertey/RandomArtifacts/blob/master/ConcurrentLEDs-Baremetal.mp4?raw=true)
+![alt text](https://github.com/nuertey/RandomArtifacts/blob/master/20210627_092109.jpg?raw=true)
+![alt text](https://github.com/nuertey/RandomArtifacts/blob/master/20210627_092115.jpg?raw=true)
 
 ## License
 MIT License
